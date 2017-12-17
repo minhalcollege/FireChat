@@ -30,7 +30,7 @@ public class ChatActivity extends AppCompatActivity implements View.OnClickListe
     EditText etMessage;
     RecyclerView rvChat;
     private FirebaseUser currentUser;
-
+    private ChatTopicAdapter adapter;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -43,6 +43,8 @@ public class ChatActivity extends AppCompatActivity implements View.OnClickListe
         fab.setOnClickListener(this);
         rvChat = findViewById(R.id.rvChatTopics);
         rvChat.setLayoutManager(new LinearLayoutManager(this));
+        adapter = new ChatTopicAdapter();
+        rvChat.setAdapter(adapter);
         read();
     }
 
@@ -59,7 +61,6 @@ public class ChatActivity extends AppCompatActivity implements View.OnClickListe
         newTopic.setValue(topic);
     }
 
-
     private void read() {
         //1) ref to a table.
         DatabaseReference topicsRef = FirebaseDatabase.getInstance().getReference("Topics");
@@ -69,6 +70,7 @@ public class ChatActivity extends AppCompatActivity implements View.OnClickListe
             public void onChildAdded(DataSnapshot d, String s) {
                 Topic topic = d.getValue(Topic.class);//Simillar to casting, actually Firebase does Parsing for us...
                 data.add(topic);
+                adapter.notifyItemInserted(data.size() - 1);
             }
 
             @Override
