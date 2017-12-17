@@ -1,13 +1,12 @@
-package tomerbu.edu.firechat;
+package tomerbu.edu.firechat.activities;
 
 
 //ctrl + alt + o
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
-import android.text.TextUtils;
-import android.util.Patterns;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -19,9 +18,17 @@ import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+
+import tomerbu.edu.firechat.R;
+import tomerbu.edu.firechat.models.User;
 
 /**
  * A login screen that offers login via email/password.
+ * ..Save the user to the database:
+ * //1)tools->firebase->add database
  */
 public class LoginActivity extends AppCompatActivity implements View.OnClickListener {
     EditText etEmail, etPassword;
@@ -35,6 +42,14 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
+        //get current user (if not null -> go to chat!!!)
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser != null){
+            Intent mainActivityInent = new Intent(this, ChatActivity.class);
+            startActivity(mainActivityInent);
+            return;
+        }
+
         etEmail = findViewById(R.id.etEmail);
         etPassword = findViewById(R.id.etPassword);
         btnCreateUser = findViewById(R.id.btnCreateUser);
@@ -45,7 +60,7 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
             @Override
             public void onClick(View v) {
                 //client side validation
-                if (isEmailValid()){
+                if (isEmailValid()) {
                     String email = etEmail.getText().toString();
                     String password = etPassword.getText().toString();
 
@@ -93,6 +108,8 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
         public void onSuccess(AuthResult authResult) {
             Toast.makeText(LoginActivity.this, "Success", Toast.LENGTH_SHORT).show();
             toggleProgress(false);
+
+            saveUser();
         }
     };
 
@@ -105,11 +122,11 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
         }
     };
 
-    private String getEmail(){
+    private String getEmail() {
         return etEmail.getText().toString();
     }
 
-    private String getPassword(){
+    private String getPassword() {
         return etPassword.getText().toString();
     }
 
@@ -134,6 +151,39 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
             etPassword.setError(null);
         }
         return valid;
+    }
+
+    private void saveUser() {
+        //1) get the current user (from firebase)
+        FirebaseUser fireUser = FirebaseAuth.getInstance().getCurrentUser();
+        //2) push id?!
+
+        DatabaseReference usersRef = FirebaseDatabase.getInstance().getReference("Users").push();
+
+        //save:
+        //in order to save -> user
+        User user = new User(fireUser.getEmail(), fireUser.getUid(), usersRef.getKey());
+
+        usersRef.setValue(user);
+//        //how to save, what to save...
+//
+//        //Naive:
+//
+//        //Never save the password... (to much responsibility) (hash)
+//
+//        //get a reference to the database object. (no new)
+//        FirebaseDatabase database = FirebaseDatabase.getInstance();
+//
+//        //reference to node element:
+//        DatabaseReference root = database.getReference();
+//
+//        //reference to a child element:
+//        DatabaseReference usersRef = root.child("Users");
+//
+//        DatabaseReference userNewRowReference = usersRef.push();
+//
+//        //if Users does not exist, it will be created
+//        userNewRowReference.setValue(email);
     }
 }
 
